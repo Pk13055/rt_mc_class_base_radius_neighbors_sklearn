@@ -1,0 +1,7 @@
+pandas
+scikit-learn
+feature-engine
+scikit-optimize
+python-multipart
+fastapi
+uvicorn[standard]
