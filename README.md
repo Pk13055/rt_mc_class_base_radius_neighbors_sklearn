@@ -1,8 +1,8 @@
-# Multi-layer Perceptron Classifier in SciKitLearn for Multi-class Classification
+# [Radius Neighbors Classifier in SciKitLearn](https://scikit-learn.org/stable/modules/generated/sklearn.neighbors.RadiusNeighborsClassifier.html#sklearn.neighbors.RadiusNeighborsClassifier) for Multi-class Classification
 ## Base problem category as per Ready Tensor specifications.
 
 ### Tags
-- multi-layer perceptron
+- radius neighbors
 - multi-class classification
 - sklearn
 - python
@@ -27,8 +27,8 @@ This Multi-class Classifier is written using Python as its programming language.
 - create a virtualenv (_optional_)
 
 		```bash
-		mkvirtualenv mlp
-		workon mlp
+		mkvirtualenv radius-neighbors
+		workon radius-neighbors
 		```
 - install dependencies
 
@@ -70,7 +70,7 @@ $PROJECT_DIR
 
 		```bash
 		cd $PROJECT_DIR/repository
-		docker build -t ready-tensor/mlp .
+		docker build -t ready-tensor/radius-neighbors .
 		```
 - **Additionally**, if any requirements are changed (in `requirements.in`):
 
@@ -84,7 +84,7 @@ $PROJECT_DIR
 
 ```bash
 cd $PROJECT_DIR
-docker run -it -v $PROJECT_DIR/ml_vol:/opt/ml_vol -v $PROJECT_DIR/repository/app:/opt/app -p 8080:8080 ready-tensor/mlp train
+docker run -it -v $PROJECT_DIR/ml_vol:/opt/ml_vol -v $PROJECT_DIR/repository/app:/opt/app -p 8080:8080 ready-tensor/radius-neighbors train
 # replace train with test|serve once training is done
 ```
 

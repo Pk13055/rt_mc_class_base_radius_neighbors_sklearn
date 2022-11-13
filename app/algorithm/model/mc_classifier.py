@@ -2,123 +2,101 @@ import os
 import warnings
 
 import joblib
-from sklearn.neural_network import MLPClassifier
+from sklearn.neighbors import RadiusNeighborsClassifier
 
 warnings.filterwarnings("ignore")
 model_fname = "model.save"
-MODEL_NAME = "multi_class_base_multi_layer_perceptron_sklearn"
+MODEL_NAME = "multi_class_base_radius_neighbors_sklearn"
 
 
 class Classifier:
-    """Multi layer perception classifier for multi class classification
-    https://scikit-learn.org/stable/modules/generated/sklearn.neural_network.MLPClassifier.html#sklearn.neural_network.MLPClassifier
+    """Radius Neighbors classifier for multi class classification
+    https://scikit-learn.org/stable/modules/generated/sklearn.neighbors.RadiusNeighborsClassifier.html#sklearn.neighbors.RadiusNeighborsClassifier
 
     Parameters
     ----------
 
-    `hidden_layer_sizes` : tuple, length = n_layers - 2, default=(100,)
-        The ith element represents the number of neurons in the ith
-        hidden layer.
+    `radius` : float, default=5.0
+        Range of parameter space to use by default for :meth:`radius_neighbors`
+        queries.
 
-    `activation` : {'identity', 'logistic', 'tanh', 'relu'}, default='relu'
-        Activation function for the hidden layer.
-        - 'identity', no-op activation, useful to implement linear bottleneck,
-          returns f(x) = x
-        - 'logistic', the logistic sigmoid function,
-          returns f(x) = 1 / (1 + exp(-x)).
-        - 'tanh', the hyperbolic tan function,
-          returns f(x) = tanh(x).
-        - 'relu', the rectified linear unit function,
-          returns f(x) = max(0, x)
+    `weights` : {'uniform', 'distance'} or callable, default='uniform'
+        Weight function used in prediction.  Possible values:
+        - 'uniform' : uniform weights.  All points in each neighborhood
+          are weighted equally.
+        - 'distance' : weight points by the inverse of their distance.
+          in this case, closer neighbors of a query point will have a
+          greater influence than neighbors which are further away.
+        - [callable] : a user-defined function which accepts an
+          array of distances, and returns an array of the same shape
+          containing the weights.
+        Uniform weights are used by default.
 
-    `solver` : {'lbfgs', 'sgd', 'adam'}, default='adam'
-        The solver for weight optimization.
-        - 'lbfgs' is an optimizer in the family of quasi-Newton methods.
-        - 'sgd' refers to stochastic gradient descent.
-        - 'adam' refers to a stochastic gradient-based optimizer proposed
-          by Kingma, Diederik, and Jimmy Ba
-        Note: The default solver 'adam' works pretty well on relatively
-        large datasets (with thousands of training samples or more) in terms of
-        both training time and validation score.
-        For small datasets, however, 'lbfgs' can converge faster and perform
-        better.
+    `algorithm` : {'auto', 'ball_tree', 'kd_tree', 'brute'}, default='auto'
+        Algorithm used to compute the nearest neighbors:
+        - 'ball_tree' will use :class:`BallTree`
+        - 'kd_tree' will use :class:`KDTree`
+        - 'brute' will use a brute-force search.
+        - 'auto' will attempt to decide the most appropriate algorithm
+          based on the values passed to :meth:`fit` method.
+        Note: fitting on sparse input will override the setting of
+        this parameter, using brute force.
 
-    `alpha` : float, default=0.0001
-        Strength of the L2 regularization term. The L2 regularization term
-        is divided by the sample size when added to the loss.
+    `leaf_size` : int, default=30
+        Leaf size passed to BallTree or KDTree.  This can affect the
+        speed of the construction and query, as well as the memory
+        required to store the tree.  The optimal value depends on the
+        nature of the problem.
 
-    `batch_size` : int, default='auto'
-        Size of minibatches for stochastic optimizers.
-        If the solver is 'lbfgs', the classifier will not use minibatch.
-        When set to "auto", `batch_size=min(200, n_samples)`.
+    `p` : int, default=2
+        Power parameter for the Minkowski metric. When p = 1, this is
+        equivalent to using manhattan_distance (l1), and euclidean_distance
+        (l2) for p = 2. For arbitrary p, minkowski_distance (l_p) is used.
 
-    `learning_rate` : {'constant', 'invscaling', 'adaptive'}, default='adaptive'
-        Learning rate schedule for weight updates.
-        - 'constant' is a constant learning rate given by
-          'learning_rate_init'.
-        - 'invscaling' gradually decreases the learning rate at each
-          time step 't' using an inverse scaling exponent of 'power_t'.
-          effective_learning_rate = learning_rate_init / pow(t, power_t)
-        - 'adaptive' keeps the learning rate constant to
-          'learning_rate_init' as long as training loss keeps decreasing.
-          Each time two consecutive epochs fail to decrease training loss by at
-          least tol, or fail to increase validation score by at least tol if
-          'early_stopping' is on, the current learning rate is divided by 5.
-        Only used when ``solver='sgd'``.
-
-    `learning_rate_init` : float, default=0.001
-        The initial learning rate used. It controls the step-size
-        in updating the weights. Only used when solver='sgd' or 'adam'.
-
-    `power_t` : float, default=0.5
-        The exponent for inverse scaling learning rate.
-        It is used in updating effective learning rate when the learning_rate
-        is set to 'invscaling'. Only used when solver='sgd'.
-
-    `max_iter` : int, default=200
-        Maximum number of iterations. The solver iterates until convergence
-        (determined by 'tol') or this number of iterations. For stochastic
-        solvers ('sgd', 'adam'), note that this determines the number of epochs
-        (how many times each data point will be used), not the number of
-        gradient steps.
+    `metric` : str or callable, default='minkowski'
+        Metric to use for distance computation. Default is "minkowski", which
+        results in the standard Euclidean distance when p = 2. See the
+        documentation of `scipy.spatial.distance
+        <https://docs.scipy.org/doc/scipy/reference/spatial.distance.html>`_ and
+        the metrics listed in
+        :class:`~sklearn.metrics.pairwise.distance_metrics` for valid metric
+        values.
+        If metric is "precomputed", X is assumed to be a distance matrix and
+        must be square during fit. X may be a :term:`sparse graph`, in which
+        case only "nonzero" elements may be considered neighbors.
+        If metric is a callable function, it takes two arrays representing 1D
+        vectors as inputs and must return one value indicating the distance
+        between those vectors. This works for Scipy's metrics, but is less
+        efficient than passing the metric name as a string.
     """
 
     def __init__(
         self,
-        hidden_layer_sizes=(100,),
-        activation="relu",
+        radius=5.0,
         *,
-        solver="adam",
-        alpha=0.0001,
-        batch_size="auto",
-        learning_rate="adaptive",
-        learning_rate_init=0.001,
-        power_t=0.5,
-        max_iter=200,
+        weights="uniform",
+        algorithm="auto",
+        leaf_size=30,
+        p=2,
+        metric="minkowski",
         **kwargs,
     ) -> None:
-        self.hidden_layer_sizes = hidden_layer_sizes
-        self.activation = activation
-        self.solver = solver
-        self.alpha = alpha
-        self.batch_size = batch_size
-        self.learning_rate = learning_rate
-        self.learning_rate_init = learning_rate_init
-        self.power_t = power_t
-        self.max_iter = max_iter
+        self.radius = radius
+        self.weights = weights
+        self.algorithm = algorithm
+        self.leaf_size = leaf_size
+        self.p = p
+        self.metric = metric
         self.model = self.build_model()
 
     def build_model(self):
-        model = MLPClassifier(
-            hidden_layer_sizes=self.hidden_layer_sizes,
-            activation=self.activation,
-            solver=self.solver,
-            alpha=self.alpha,
-            batch_size=self.batch_size,
-            learning_rate=self.learning_rate,
-            learning_rate_init=self.learning_rate_init,
-            power_t=self.power_t,
-            max_iter=self.max_iter,
+        model = RadiusNeighborsClassifier(
+            radius=self.radius,
+            weights=self.weights,
+            algorithm=self.algorithm,
+            leaf_size=self.leaf_size,
+            p=self.p,
+            metric=self.metric,
         )
         return model
 
