@@ -16,7 +16,7 @@ class Classifier:
     Parameters
     ----------
 
-    `radius` : float, default=5.0
+    `radius` : float, default=10.0
         Range of parameter space to use by default for :meth:`radius_neighbors`
         queries.
 
@@ -72,7 +72,7 @@ class Classifier:
 
     def __init__(
         self,
-        radius=5.0,
+        radius=10.0,
         *,
         weights="uniform",
         algorithm="auto",

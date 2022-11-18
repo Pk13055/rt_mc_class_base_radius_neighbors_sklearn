@@ -42,6 +42,14 @@ This Multi-class Classifier is written using Python as its programming language.
 		cd local_test
 		./run_local.py
 		```
+- Set radius parameter appropriately for relevant dataset.
+
+		```
+		# check out `app/algorithm/model/mc_classifier.py`
+		# radius=5.0 (default value) should be set to an appropriate value so that data has appropriate neighbors within set radius
+		```
+
+- _Additionally_, you can set `run_hpt = [True]` to tune the hyperparameter to the best value during training (refer to `app/algorithm/config/hpt_params.json` to set `radius` range to a valid range to find optimal value)
 
 - Ensure appropriate dir structure
 
